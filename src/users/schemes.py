@@ -32,6 +32,10 @@ class RegisterUser(AbstractUser):
     password2: str = Field(min_length=6, description="confirm password")
 
 
+class RegisterSuperUser(RegisterUser):
+    role: Optional[Literal[Role.ADMIN, Role.STAFF]] = Field(default=Role.STAFF.value)
+
+
 class LoginUser(AbstractUser):
     password: str
 
@@ -52,7 +56,7 @@ class UserRead(AbstractUser):
     company: Optional[str] = None
     phone_number: Optional[str] = None
     city: Optional[str] = None
-    role: Literal[Role.ADMIN, Role.STAFF, Role.DEFAULT] = Field(default="default")
+    role: Literal["admin", "staff", "default"] = Field(default="default")
     is_active: bool
     join_at: datetime
 

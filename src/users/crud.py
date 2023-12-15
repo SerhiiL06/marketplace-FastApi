@@ -1,4 +1,4 @@
-from .models import User
+from .models import User, Role
 
 from database import settings
 from database.depends import db_depends
@@ -14,7 +14,7 @@ bearer_token = OAuth2PasswordBearer(tokenUrl="users/token")
 
 
 class UserCRUD:
-    def create_user(self, user_data, db):
+    def create_user(self, user_data, db, admin=None):
         if db.query(User).filter(User.email == user_data.email).first():
             raise UserAlreadyExists(email=user_data.email)
 
@@ -25,7 +25,7 @@ class UserCRUD:
 
         new_user = User(
             **user_data.model_dump(exclude=["password1", "password2"]),
-            hashed_password=password
+            hashed_password=password,
         )
 
         db.add(new_user)
@@ -59,6 +59,11 @@ class UserCRUD:
         current_user.hashed_password = new_hash_password
 
         db.commit()
+
+    def user_list(self, db):
+        users = db.query(User).all()
+
+        return users
 
     def retrieve_user(self, user_id, db):
         user = db.query(User).filter(User.id == user_id).one_or_none()

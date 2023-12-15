@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from src.users.routers import users_router
+from src.users.admin import admin_router
 from src.users.exceptions import UserAlreadyExists, PasswordDifference, UserIDError
 
 app = FastAPI(title="Marketplace", version="0.0.1")
@@ -9,6 +10,8 @@ app = FastAPI(title="Marketplace", version="0.0.1")
 # connect routers
 app.include_router(users_router)
 
+
+app.include_router(admin_router)
 
 # register exceptions
 

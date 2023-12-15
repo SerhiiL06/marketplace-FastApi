@@ -14,7 +14,7 @@ class User(Base):
 
     hashed_password: Mapped[str] = mapped_column(String)
 
-    role: Mapped[str] = Role.DEFAULT
+    role: Mapped[str] = mapped_column(default=Role.DEFAULT)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 

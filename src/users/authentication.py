@@ -10,6 +10,7 @@ from jose.exceptions import JWTError
 from datetime import datetime, timedelta
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer
+from .crud import UserCRUD
 
 bcrypt = CryptContext(schemes=["bcrypt"])
 
@@ -37,6 +38,11 @@ class UserAuth:
             )
 
         return self._create_access_token(user.role, user.id, user.email)
+
+    def _create_superuser(self, data: dict, db):
+        crud = UserCRUD()
+
+        crud.create_user(user_data=data, db=db, admin=True)
 
     @classmethod
     def _create_access_token(cls, role: str, id: int, email: str):
