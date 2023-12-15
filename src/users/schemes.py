@@ -4,6 +4,12 @@ from datetime import datetime
 from enum import Enum
 
 
+class Token(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    access_token: str
+    token_type: str
+
+
 class Role(Enum):
     DEFAULT = "default"
     STAFF = "staff"

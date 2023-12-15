@@ -1,12 +1,29 @@
-from fastapi import FastAPI
-
-# from database.settings import Base, engine
-# from src.users.models import User
-
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from src.users.routers import users_router
+from src.users.exceptions import UserAlreadyExists, PasswordDifference
 
 app = FastAPI(title="Marketplace", version="0.0.1")
 
 
-@app.get("/")
-async def hello():
-    return {"message": "hello world"}
+# connect routers
+app.include_router(users_router)
+
+
+# register exceptions
+
+
+@app.exception_handler(UserAlreadyExists)
+async def user_exists_handler(request: Request, exc: UserAlreadyExists):
+    return JSONResponse(
+        content=f"user with this email {exc.email} alredy exists",
+        status_code=status.HTTP_400_BAD_REQUEST,
+    )
+
+
+@app.exception_handler(PasswordDifference)
+async def password_error(request: Request, exc: PasswordDifference):
+    return JSONResponse(
+        content="password must be the same!",
+        status_code=status.HTTP_400_BAD_REQUEST,
+    )
