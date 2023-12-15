@@ -2,6 +2,7 @@ from database.settings import Base
 from sqlalchemy import String, Integer, Boolean, DateTime, LargeBinary, MetaData
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
+from .schemes import Role
 
 
 class User(Base):
@@ -13,7 +14,7 @@ class User(Base):
 
     hashed_password: Mapped[str] = mapped_column(String)
 
-    role: Mapped[str] = mapped_column(String, default="simple")
+    role: Mapped[str] = Role.DEFAULT
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
