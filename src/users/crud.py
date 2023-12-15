@@ -61,7 +61,7 @@ class UserCRUD:
         db.commit()
 
     def user_list(self, db):
-        users = db.query(User).all()
+        users = db.query(User)
 
         return users
 

@@ -5,6 +5,7 @@ from .schemes import RegisterSuperUser, UserRead
 from .crud import UserCRUD
 from .models import User
 from .authentication import UserAuth, current_user
+from .common import check_role
 
 from database.depends import db_depends
 from .exceptions import UserIDError
@@ -14,22 +15,26 @@ admin_router = APIRouter(prefix="/admin/users", tags=["admin users"])
 
 
 @admin_router.get("/users/all", response_model=list[UserRead])
-async def user_list(user: current_user, db: db_depends):
-    if user.get("role") not in ["admin", "staff"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
+@check_role(allowed_roles=["admin", "staff"])
+async def user_list(
+    user: current_user, db: db_depends, email: str = None, role: str = None
+):
     crud = UserCRUD()
 
     query = crud.user_list(db)
+
+    if email:
+        query = query.filter(User.email == email)
+
+    if role:
+        query = query.filter(User.role == role)
 
     return query
 
 
 @admin_router.get("/users/{user_id}", response_model=UserRead)
+@check_role(allowed_roles=["admin", "staff"])
 async def retrieve_user(user_id: int, db: db_depends, user: current_user):
-    if user.get("role") not in ["admin", "staff"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
     crud = UserCRUD()
 
     retrieve = crud.retrieve_user(user_id, db)
@@ -38,21 +43,18 @@ async def retrieve_user(user_id: int, db: db_depends, user: current_user):
 
 
 @admin_router.post("/create-superuser")
+@check_role(allowed_roles=["admin", "staff"])
 async def create_superuser(data: RegisterSuperUser, user: current_user, db: db_depends):
     auth = UserAuth()
 
-    if user.get("role") not in ["admin", "staff"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     auth._create_superuser(data=data, db=db)
 
     return Response(content="superuser create", status_code=status.HTTP_201_CREATED)
 
 
 @admin_router.delete("/user-list/{user_id}")
+@check_role(allowed_roles=["admin", "staff"])
 async def delete_user(user_id: int, user: current_user, db: db_depends):
-    if user.get("role") not in ["admin", "staff"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
     user_to_delete = db.query(User).filter(User.id == user_id).one_or_none()
 
     if user_to_delete is None:
