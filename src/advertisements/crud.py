@@ -41,3 +41,31 @@ class AdvertisementsCRUD:
 
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+    def list_adv(
+        self,
+        db,
+        **filter_data,
+    ):
+        object_list = db.query(Advertisements)
+        if filter_data.get("category", None) is not None:
+            object_list = object_list.filter(
+                (Advertisements.type).in_(filter_data.get("category"))
+            )
+
+        if filter_data.get("title", None) is not None:
+            object_list = object_list.filter(
+                (Advertisements.title).icontains(filter_data.get("title"))
+            )
+
+        return object_list.all()
+
+    def retrieve(self, db, adv_id):
+        obj = db.query(Advertisements).filter(Advertisements.id == adv_id).one_or_none()
+        if obj is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="adv with with id doesn't exists",
+            )
+
+        return obj

@@ -30,8 +30,6 @@ class AdvertisementsScheme(BaseModel):
 
     price: float = Field(gt=0)
 
-    image: Optional[str] = None
-
     type: Literal["work", "car", "other", "house"]
 
     is_publish: bool = Field(default=True)
