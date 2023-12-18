@@ -26,6 +26,7 @@ class UserCRUD:
         new_user = User(
             **user_data.model_dump(exclude=["password1", "password2"]),
             hashed_password=password,
+            role="default"
         )
 
         db.add(new_user)
