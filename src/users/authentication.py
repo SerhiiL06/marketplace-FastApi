@@ -65,7 +65,7 @@ def authenticate(token: Annotated[str, Depends(bearer_token)]):
 
     exp = datetime.fromtimestamp(user.get("exp"))
     if exp < datetime.utcnow():
-        raise JWTError()
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     return user
 

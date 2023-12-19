@@ -39,3 +39,18 @@ class AdvertisementsScheme(BaseModel):
     car_info: Optional[CarScheme] = None
     house_info: Optional[HouseScheme] = None
     work_info: Optional[WorkScheme] = None
+
+
+class UpdateAdvScheme(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    title: Optional[str] = Field(None)
+    description: Optional[str] = Field(None, min_length=5, max_length=150)
+
+    price: Optional[float] = Field(None, gt=0)
+
+    is_publish: Optional[bool] = Field(default=True)
+
+    car_info: Optional[CarScheme] = None
+    house_info: Optional[HouseScheme] = None
+    work_info: Optional[WorkScheme] = None

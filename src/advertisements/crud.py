@@ -1,5 +1,6 @@
 from .models import Advertisements, Car, Work, House
 from fastapi import HTTPException, status
+from .exceptions import AdvIDNotExists
 
 
 class AdvertisementsCRUD:
@@ -39,8 +40,36 @@ class AdvertisementsCRUD:
 
             db.commit()
 
-        else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    def update_adv(self, db, adv_id, user, update_data):
+        current_obj = db.query(Advertisements).get(adv_id)
+        if current_obj is None:
+            raise AdvIDNotExists(adv_id)
+        if current_obj.owner != user.get("user_id"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        data = update_data.model_dump(exclude_none=True)
+        house_info = data.pop("house_info", None)
+        car_info = data.pop("car_info", None)
+        work_info = data.pop("work_info", None)
+
+        type_obj = house_info or car_info or work_info
+
+        for k, v in data.items():
+            setattr(current_obj, k, v)
+
+        if house_info:
+            children = db.query(House).get(current_obj.house_info.id)
+
+        elif car_info:
+            children = db.query(Car).get(current_obj.car_info.id)
+
+        elif work_info:
+            children = db.query(Work).get(current_obj.work_info.id)
+
+        for k, v in type_obj.items():
+            setattr(children, k, v)
+
+        db.commit()
 
     def list_adv(
         self,
@@ -63,9 +92,25 @@ class AdvertisementsCRUD:
     def retrieve(self, db, adv_id):
         obj = db.query(Advertisements).filter(Advertisements.id == adv_id).one_or_none()
         if obj is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="adv with with id doesn't exists",
-            )
-
+            raise AdvIDNotExists(adv_id)
         return obj
+
+    def delete(self, db, obj_id, user):
+        obj = self.retrieve(db, obj_id)
+
+        if user.get("role") == "default":
+            if obj.owner != user.get("user_id"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Don't have permision"
+                )
+
+        db.delete(obj)
+
+        db.commit()
+
+    def my_adv_list(self, db, user):
+        object_list = db.query(Advertisements).filter(
+            Advertisements.owner == user.get("user_id")
+        )
+
+        return object_list

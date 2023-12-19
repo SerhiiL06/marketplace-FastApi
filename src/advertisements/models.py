@@ -1,6 +1,6 @@
 from database.settings import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import LargeBinary, ForeignKey
+from sqlalchemy import LargeBinary, ForeignKey, UniqueConstraint
 from decimal import Decimal
 from datetime import datetime
 
@@ -20,21 +20,37 @@ class Advertisements(Base):
 
     town: Mapped[str] = mapped_column(nullable=True)
 
-    house_info: Mapped["House"] = relationship(back_populates="type_info")
+    house_info: Mapped["House"] = relationship(
+        back_populates="type_info", cascade="all, delete-orphan", uselist=False
+    )
+    work_info: Mapped["Work"] = relationship(
+        back_populates="type_info", cascade="all, delete-orphan", uselist=False
+    )
+    car_info: Mapped["Car"] = relationship(
+        back_populates="type_info", cascade="all, delete-orphan", uselist=False
+    )
+
+    __table_args__ = (UniqueConstraint("title"),)
 
 
 class House(Base):
     __tablename__ = "houses"
-    advertisement: Mapped[int] = mapped_column(ForeignKey("advertisements.id"))
+    advertisement: Mapped[int] = mapped_column(
+        ForeignKey("advertisements.id", ondelete="CASCADE")
+    )
     rooms: Mapped[int] = mapped_column()
     area: Mapped[float] = mapped_column()
 
-    type_info: Mapped["Advertisements"] = relationship(back_populates="house_info")
+    type_info: Mapped["Advertisements"] = relationship(
+        back_populates="house_info", single_parent=True, cascade="all, delete-orphan"
+    )
 
 
 class Car(Base):
     __tablename__ = "cars"
-    advertisement: Mapped[int] = mapped_column(ForeignKey("advertisements.id"))
+    advertisement: Mapped[int] = mapped_column(
+        ForeignKey("advertisements.id", ondelete="CASCADE")
+    )
     brand: Mapped[str] = mapped_column()
     year: Mapped[int] = mapped_column()
     engine_power: Mapped[float] = mapped_column()
@@ -42,8 +58,18 @@ class Car(Base):
 
     status: Mapped[str] = mapped_column()
 
+    type_info: Mapped["Advertisements"] = relationship(
+        back_populates="car_info", single_parent=True, cascade="all, delete-orphan"
+    )
+
 
 class Work(Base):
     __tablename__ = "works"
-    advertisement: Mapped[int] = mapped_column(ForeignKey("advertisements.id"))
+    advertisement: Mapped[int] = mapped_column(
+        ForeignKey("advertisements.id", ondelete="CASCADE")
+    )
     type_of_work: Mapped[str] = mapped_column()
+
+    type_info: Mapped["Advertisements"] = relationship(
+        back_populates="work_info", single_parent=True, cascade="all, delete-orphan"
+    )

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Query
-from .schemes import AdvertisementsScheme
+from fastapi import APIRouter, Query, Response, status
+from .schemes import AdvertisementsScheme, UpdateAdvScheme
 from src.users.authentication import current_user
 from database.depends import db_depends
 from .crud import AdvertisementsCRUD
+from src.users.admin import check_role
 
 
 adv_router = APIRouter(prefix="/board", tags=["advertisements"])
@@ -27,7 +28,41 @@ async def get_all_adv(
 
 
 @adv_router.get(
+    "/my-adv",
+    response_model=list[AdvertisementsScheme],
+    response_model_exclude_none=True,
+)
+async def my_adv(db: db_depends, user: current_user):
+    obj_list = crud.my_adv_list(db, user)
+
+    if obj_list:
+        return obj_list
+
+    return Response(
+        content={"now you don't have any advertisements"},
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
+
+
+@adv_router.get(
     "/{adv_id}", response_model=AdvertisementsScheme, response_model_exclude_none=True
 )
 async def get_adv(db: db_depends, adv_id: int):
     return crud.retrieve(db, adv_id)
+
+
+@adv_router.put("/{adv_id}")
+async def update_adv(
+    adv_id: int, db: db_depends, user: current_user, update_info: UpdateAdvScheme
+):
+    crud.update_adv(db, adv_id, user, update_info)
+
+    return Response(status_code=status.HTTP_200_OK)
+
+
+@adv_router.delete("/{adv_id}")
+@check_role(["default", "admin", "staff"])
+async def delete_adv(db: db_depends, avd_id: int, user: current_user):
+    crud.delete(db, avd_id, user)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
