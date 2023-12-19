@@ -1,8 +1,18 @@
 from database.settings import Base
-from sqlalchemy import String, Integer, Boolean, DateTime, LargeBinary, MetaData
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    String,
+    Integer,
+    Boolean,
+    DateTime,
+    LargeBinary,
+    MetaData,
+    ForeignKey,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from .schemes import Role
+from src.advertisements.models import Advertisements
+from typing import List
 
 
 class User(Base):
@@ -26,3 +36,20 @@ class User(Base):
     phone_number: Mapped[str] = mapped_column(String(15), nullable=True, unique=True)
 
     city: Mapped[str] = mapped_column(String(20), nullable=True)
+
+    bookmarks: Mapped[List["Bookmark"]] = relationship(back_populates="user")
+
+
+class Bookmark(Base):
+    __tablename__ = "bookmarks"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    adv_id: Mapped[int] = mapped_column(
+        ForeignKey("advertisements.id"), primary_key=True
+    )
+
+    created: Mapped[datetime] = mapped_column(default=datetime.now)
+
+    user: Mapped["User"] = relationship(back_populates="bookmarks")
+
+    advertisement: Mapped["Advertisements"] = relationship(back_populates="bookmarks")

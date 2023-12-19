@@ -30,6 +30,7 @@ class Advertisements(Base):
         back_populates="type_info", cascade="all, delete-orphan", uselist=False
     )
 
+    bookmarks: Mapped["Bookmark"] = relationship(back_populates="advertisement")
     __table_args__ = (UniqueConstraint("title"),)
 
 

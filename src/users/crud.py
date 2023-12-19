@@ -1,8 +1,8 @@
-from .models import User, Role
+from .models import User, Role, Bookmark
 
 from database import settings
 from database.depends import db_depends
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Response
 from passlib.context import CryptContext
 from .exceptions import UserAlreadyExists, PasswordDifference, UserIDError
 from fastapi.security import OAuth2PasswordBearer
@@ -91,3 +91,26 @@ class UserCRUD:
         db.delete(user)
 
         db.commit()
+
+
+class BookmarkActions:
+    db = db_depends()
+
+    def add_delete_bookmark(self, user, adv_id):
+        check_exists = (
+            self.db.query(Bookmark)
+            .filter(Bookmark.user_id == user.get("user_id"), Bookmark.adv_id == adv_id)
+            .one_or_none()
+        )
+
+        if check_exists:
+            self.db.delete(check_exists)
+            self.db.commit()
+            return Response(content="delete", status_code=status.HTTP_204_NO_CONTENT)
+
+        obj = Bookmark(user_id=user.get("user_id"), adv_id=adv_id)
+
+        self.db.add(obj)
+        self.db.commit()
+
+        return Response(content="create", status_code=status.HTTP_200_OK)

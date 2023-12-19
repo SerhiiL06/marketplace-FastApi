@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from .schemes import (
     RegisterUser,
     UserRead,
@@ -8,8 +8,9 @@ from .schemes import (
     Role,
 )
 
-from .crud import UserCRUD
+from .crud import UserCRUD, BookmarkActions
 from .authentication import UserAuth, current_user
+from .models import Bookmark
 from typing import Annotated
 from database.depends import db_depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -18,6 +19,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 users_router = APIRouter(prefix="/users", tags=["users"])
 
 crud = UserCRUD()
+
+book = BookmarkActions()
 
 
 @users_router.post("/register")
@@ -106,3 +109,8 @@ async def delete_user(user_id: int, user: current_user, db: db_depends):
     crud.delete_user(user_id, db)
 
     return {"message": "delete success"}
+
+
+@users_router.get("/bookmark/add/{adv_id}")
+async def add_to_bookmark(user: current_user, adv_id: int = Path(gt=0)):
+    return book.add_delete_bookmark(user, adv_id)
