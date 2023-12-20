@@ -15,7 +15,7 @@ class SendMail:
     async def send_email(self, email):
         mail = FastMail(mail_config)
 
-        token = self._create_token_for_confirm(email)
+        token = self._create_token_for_confirm(email, minutes=600)
 
         link = f"http://127.0.0.1:8000/email/confirm/{token}"
 
@@ -43,13 +43,16 @@ class SendMail:
             db.query(User).filter(User.email == token_data.get("email")).one_or_none()
         )
 
-        current_user.is_active = True
+        self._change_to_active(current_user)
+
+    def _change_to_active(self, user):
+        user.is_active = True
 
         db.commit()
 
     @classmethod
-    def _create_token_for_confirm(cls, email):
-        exp = datetime.now() + timedelta(days=1)
+    def _create_token_for_confirm(cls, email, minutes):
+        exp = datetime.now() + timedelta(minutes=minutes)
         data = {"email": email, "exp": exp}
         token = jwt.encode(data, SECRET_KEY, algorithm="HS256")
 

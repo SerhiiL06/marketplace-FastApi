@@ -1,5 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from src.email.logic import SendMail
+from database import settings
+from datetime import datetime
+from .models import User
+from jose import jwt
+from database.depends import db_depends
+from .exceptions import PasswordDifference, UserIDError
+from .schemes import ForgotPasswordScheme
+from pydantic import EmailStr
+from .password import forgot_password
+from .authentication import bcrypt
 
 email_router = APIRouter(prefix="/email", tags=["email"])
 
@@ -11,3 +21,32 @@ async def email_vericifation(token: str):
     mail.check_token_and_verify(token)
 
     return {"message": "Your email was confirm"}
+
+
+@email_router.post("/forgot-password/")
+async def forgot_password_email(email: EmailStr, db: db_depends):
+    chech_exists = db.query(User).filter(User.email == email).one_or_none()
+
+    if chech_exists is None:
+        raise UserIDError(email)
+
+    await forgot_password(email)
+
+
+@email_router.post("/update-password/{token}")
+async def update_password(
+    token: str, password_data: ForgotPasswordScheme, db: db_depends
+):
+    user = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+
+    exp = datetime.fromtimestamp(user.get("exp"))
+    if exp < datetime.utcnow():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    current_user = db.query(User).filter(User.email == user.get("email")).one_or_none()
+
+    if password_data.password1 != password_data.password2:
+        raise PasswordDifference()
+
+    current_user.hashed_password = bcrypt.hash(password_data.password1)
+
+    db.commit()

@@ -46,6 +46,11 @@ class ChangePassword(BaseModel):
     new_password2: str = Field(min_length=6)
 
 
+class ForgotPasswordScheme(BaseModel):
+    password1: str = Field(min_length=6)
+    password2: str = Field(min_length=6)
+
+
 # READ/UPDATE OPERATIONS
 
 
