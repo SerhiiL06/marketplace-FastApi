@@ -29,7 +29,7 @@ bookmark = BookmarkActions()
 
 @users_router.post("/register")
 async def register(data: RegisterUser, db: db_depends):
-    crud.create_user(data, db)
+    await crud.create_user(data, db)
 
     return {"message": "register success"}
 

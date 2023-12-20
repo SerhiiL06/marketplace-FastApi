@@ -6,6 +6,7 @@ from fastapi import HTTPException, status, Depends, Response
 from passlib.context import CryptContext
 from .exceptions import UserAlreadyExists, PasswordDifference, UserIDError
 from fastapi.security import OAuth2PasswordBearer
+from src.email.logic import SendMail
 
 bcrypt = CryptContext(schemes=["bcrypt"])
 
@@ -13,8 +14,11 @@ bcrypt = CryptContext(schemes=["bcrypt"])
 bearer_token = OAuth2PasswordBearer(tokenUrl="users/token")
 
 
+mail = SendMail()
+
+
 class UserCRUD:
-    def create_user(self, user_data, db, admin=None):
+    async def create_user(self, user_data, db, admin=None):
         if db.query(User).filter(User.email == user_data.email).first():
             raise UserAlreadyExists(email=user_data.email)
 
@@ -26,11 +30,14 @@ class UserCRUD:
         new_user = User(
             **user_data.model_dump(exclude=["password1", "password2"]),
             hashed_password=password,
-            role="default"
+            role="default",
+            is_active=False
         )
 
         db.add(new_user)
         db.commit()
+
+        await mail.send_email(user_data.email)
 
     def change_password(self, token_data, password, db):
         current_user = (

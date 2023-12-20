@@ -37,6 +37,12 @@ class UserAuth:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="incorrect password"
             )
 
+        if user.is_active == False:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="you need to verify or profile",
+            )
+
         return self._create_access_token(user.role, user.id, user.email)
 
     def _create_superuser(self, data: dict, db):

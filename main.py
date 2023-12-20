@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from src.users.routers import users_router
 from src.users.admin import admin_router
+from src.users.email_confirm import email_router
 from src.advertisements.routers import adv_router
 from src.users.exceptions import UserAlreadyExists, PasswordDifference, UserIDError
 from src.advertisements.exceptions import AdvIDNotExists
@@ -16,6 +17,7 @@ app.include_router(users_router)
 app.include_router(admin_router)
 
 app.include_router(adv_router)
+app.include_router(email_router)
 
 # register exceptions
 
