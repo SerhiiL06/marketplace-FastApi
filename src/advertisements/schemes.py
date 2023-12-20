@@ -23,7 +23,7 @@ class WorkScheme(BaseModel):
     type_of_work: Literal["local", "remote"]
 
 
-class AdvertisementsScheme(BaseModel):
+class DefaultAdvertisementScheme(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     title: str = Field(min_length=5, max_length=50)
     description: str = Field(min_length=5, max_length=150)
@@ -36,6 +36,9 @@ class AdvertisementsScheme(BaseModel):
 
     town: Literal["Kyiv", "Berlin", "New York"]
 
+
+class AdvertisementsScheme(DefaultAdvertisementScheme):
+    id: int
     car_info: Optional[CarScheme] = None
     house_info: Optional[HouseScheme] = None
     work_info: Optional[WorkScheme] = None

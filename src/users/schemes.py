@@ -49,6 +49,10 @@ class ChangePassword(BaseModel):
 # READ/UPDATE OPERATIONS
 
 
+class BookmarkScheme(BaseModel):
+    adv_id: int
+
+
 class UserRead(AbstractUser):
     id: int
     first_name: str
@@ -59,6 +63,8 @@ class UserRead(AbstractUser):
     role: Literal["admin", "staff", "default"] = Field(default="default")
     is_active: bool
     join_at: datetime
+
+    bookmarks: list[BookmarkScheme]
 
 
 class DefaultUserUpdate(BaseModel):
@@ -78,3 +84,7 @@ class AdminUserUpdate(DefaultUserUpdate):
         default="default"
     )
     is_active: bool = None
+
+
+class MyBookmarksScheme(BaseModel):
+    model_config = ConfigDict(from_attributes=True)

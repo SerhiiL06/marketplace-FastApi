@@ -7,12 +7,16 @@ from .schemes import (
     DefaultUserUpdate,
     Role,
 )
+from src.advertisements.models import Advertisements
+from src.advertisements.schemes import DefaultAdvertisementScheme
 
 from .crud import UserCRUD, BookmarkActions
 from .authentication import UserAuth, current_user
-from .models import Bookmark
+from .models import Bookmark, User
+
 from typing import Annotated
 from database.depends import db_depends
+from sqlalchemy import desc, asc
 from fastapi.security import OAuth2PasswordRequestForm
 
 
@@ -20,7 +24,7 @@ users_router = APIRouter(prefix="/users", tags=["users"])
 
 crud = UserCRUD()
 
-book = BookmarkActions()
+bookmark = BookmarkActions()
 
 
 @users_router.post("/register")
@@ -111,6 +115,19 @@ async def delete_user(user_id: int, user: current_user, db: db_depends):
     return {"message": "delete success"}
 
 
-@users_router.get("/bookmark/add/{adv_id}")
+@users_router.get("/bookmark/add/{adv_id}", tags=["bookmark"])
 async def add_to_bookmark(user: current_user, adv_id: int = Path(gt=0)):
-    return book.add_delete_bookmark(user, adv_id)
+    return bookmark.add_delete_bookmark(user, adv_id)
+
+
+@users_router.get(
+    "/bookmakr/my", tags=["bookmark"], response_model=list[DefaultAdvertisementScheme]
+)
+async def get_bookmarks(db: db_depends, user: current_user):
+    return (
+        db.query(Advertisements)
+        .join(Bookmark, Advertisements.id == Bookmark.adv_id)
+        .filter(Bookmark.user_id == user.get("user_id"))
+        .order_by(desc(Bookmark.created))
+        .all()
+    )
