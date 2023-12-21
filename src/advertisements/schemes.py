@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Literal, Optional, Union
 from datetime import datetime
+from typing import Literal, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CarScheme(BaseModel):

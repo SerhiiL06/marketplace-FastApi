@@ -1,5 +1,6 @@
-from passlib.context import CryptContext
 from fastapi_mail import FastMail, MessageSchema
+from passlib.context import CryptContext
+
 from src.email.config import mail_config
 from src.email.logic import SendMail
 

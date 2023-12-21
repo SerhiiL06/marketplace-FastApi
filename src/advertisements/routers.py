@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Query, Response, status
-from .schemes import AdvertisementsScheme, UpdateAdvScheme
-from src.users.authentication import current_user
-from database.depends import db_depends
-from .crud import AdvertisementsCRUD
-from src.users.admin import check_role
 
+from database.depends import db_depends
+from src.users.admin import check_role
+from src.users.authentication import current_user
+
+from .crud import AdvertisementsCRUD
+from .schemes import AdvertisementsScheme, UpdateAdvScheme
 
 adv_router = APIRouter(prefix="/board", tags=["advertisements"])
 

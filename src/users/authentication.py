@@ -1,16 +1,17 @@
-from .models import User
+from datetime import datetime, timedelta
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt
+from jose.exceptions import JWTError
+from passlib.context import CryptContext
 
 from database import settings
 from database.depends import db_depends
-from fastapi import HTTPException, status, Depends
-from passlib.context import CryptContext
 
-from jose import jwt
-from jose.exceptions import JWTError
-from datetime import datetime, timedelta
-from typing import Annotated
-from fastapi.security import OAuth2PasswordBearer
 from .crud import UserCRUD
+from .models import User
 
 bcrypt = CryptContext(schemes=["bcrypt"])
 

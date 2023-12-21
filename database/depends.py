@@ -1,5 +1,7 @@
-from fastapi import Depends
 from typing import Annotated
+
+from fastapi import Depends
+
 from .settings import SessionLocal
 
 

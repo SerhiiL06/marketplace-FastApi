@@ -1,9 +1,9 @@
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase, mapped_column, Mapped
-from sqlalchemy import Integer
-from dotenv import load_dotenv
 import os
 
+from dotenv import load_dotenv
+from sqlalchemy import Integer
+from sqlalchemy.engine import create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 load_dotenv()
 

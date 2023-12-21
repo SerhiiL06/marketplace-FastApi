@@ -1,28 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Path
-from .schemes import (
-    RegisterUser,
-    UserRead,
-    Token,
-    ChangePassword,
-    DefaultUserUpdate,
-    Role,
-)
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Response, Request
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import asc, desc
+
+from database.depends import db_depends
+from src.advertisements.crud import AdvertisementsCRUD
 from src.advertisements.models import Advertisements
 from src.advertisements.schemes import DefaultAdvertisementScheme
 
-from .crud import UserCRUD, BookmarkActions
 from .authentication import UserAuth, current_user
-from .models import Bookmark, User
-
-from typing import Annotated
-from database.depends import db_depends
-from sqlalchemy import desc, asc
-from fastapi.security import OAuth2PasswordRequestForm
-
+from .crud import BookmarkActions, UserCRUD
+from .session import BookmarkSession
+from .models import Bookmark
+from .schemes import (
+    ChangePassword,
+    DefaultUserUpdate,
+    RegisterUser,
+    Role,
+    Token,
+    UserRead,
+)
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 
 crud = UserCRUD()
+adv_crud = AdvertisementsCRUD()
 
 bookmark = BookmarkActions()
 
@@ -131,3 +134,21 @@ async def get_bookmarks(db: db_depends, user: current_user):
         .order_by(desc(Bookmark.created))
         .all()
     )
+
+
+@users_router.post("/add-bookmark", tags=["session"])
+async def add_to_bookmark(adv_id: int, request: Request, response: Response):
+    session = BookmarkSession()
+
+    return session.add_to_bookmark(adv_id, request, response)
+
+
+@users_router.get(
+    "/my-list-bookmark",
+    tags=["session"],
+    response_model=list[DefaultAdvertisementScheme],
+)
+async def bookmark_list(request: Request, db: db_depends):
+    session = BookmarkSession()
+
+    return session.get_bookmark_list(request, db)

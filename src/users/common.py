@@ -1,5 +1,6 @@
-from fastapi import HTTPException, status
 from functools import wraps
+
+from fastapi import HTTPException, status
 
 
 def check_role(allowed_roles):

@@ -1,12 +1,13 @@
-from .models import User, Role, Bookmark
+from fastapi import Depends, HTTPException, Response, status
+from fastapi.security import OAuth2PasswordBearer
+from passlib.context import CryptContext
 
 from database import settings
 from database.depends import db_depends
-from fastapi import HTTPException, status, Depends, Response
-from passlib.context import CryptContext
-from .exceptions import UserAlreadyExists, PasswordDifference, UserIDError
-from fastapi.security import OAuth2PasswordBearer
 from src.email.logic import SendMail
+
+from .exceptions import PasswordDifference, UserAlreadyExists, UserIDError
+from .models import Bookmark, Role, User
 
 bcrypt = CryptContext(schemes=["bcrypt"])
 

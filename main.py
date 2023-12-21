@@ -1,14 +1,23 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from src.users.routers import users_router
+
+
+from src.advertisements.exceptions import AdvIDNotExists
+from src.advertisements.routers import adv_router
 from src.users.admin import admin_router
 from src.users.email_confirm import email_router
-from src.advertisements.routers import adv_router
-from src.users.exceptions import UserAlreadyExists, PasswordDifference, UserIDError
-from src.advertisements.exceptions import AdvIDNotExists
+from src.users.exceptions import PasswordDifference, UserAlreadyExists, UserIDError
+from src.users.routers import users_router
 
-app = FastAPI(title="Marketplace", version="0.0.1")
 
+app = FastAPI(
+    title="Marketplace",
+    version="0.1.0",
+    summary="The work marketplace",
+    description="The little marketplace",
+)
+
+# app.add_middleware()
 
 # connect routers
 app.include_router(users_router)
@@ -18,6 +27,7 @@ app.include_router(admin_router)
 
 app.include_router(adv_router)
 app.include_router(email_router)
+
 
 # register exceptions
 

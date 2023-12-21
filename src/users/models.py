@@ -1,18 +1,14 @@
-from database.settings import Base
-from sqlalchemy import (
-    String,
-    Integer,
-    Boolean,
-    DateTime,
-    LargeBinary,
-    MetaData,
-    ForeignKey,
-)
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
-from .schemes import Role
-from src.advertisements.models import Advertisements
 from typing import List
+
+from sqlalchemy import (Boolean, DateTime, ForeignKey, Integer, LargeBinary,
+                        MetaData, String)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from database.settings import Base
+from src.advertisements.models import Advertisements
+
+from .schemes import Role
 
 
 class User(Base):

@@ -1,7 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
-from typing import Optional, Literal
 from datetime import datetime
 from enum import Enum
+from typing import Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class Token(BaseModel):

@@ -1,10 +1,12 @@
-from fastapi_mail import ConnectionConfig, MessageSchema, FastMail, MessageType
+from datetime import datetime, timedelta
+
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from jose import jwt
 from jose.exceptions import JWTError
+
+from database.depends import db_depends
 from database.settings import SECRET_KEY
 from src.users.models import User
-from database.depends import db_depends
-from datetime import timedelta, datetime
 
 from .config import mail_config
 

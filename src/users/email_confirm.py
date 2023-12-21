@@ -1,15 +1,18 @@
-from fastapi import APIRouter, HTTPException, status
-from src.email.logic import SendMail
-from database import settings
 from datetime import datetime
-from .models import User
+
+from fastapi import APIRouter, HTTPException, status
 from jose import jwt
-from database.depends import db_depends
-from .exceptions import PasswordDifference, UserIDError
-from .schemes import ForgotPasswordScheme
 from pydantic import EmailStr
-from .password import forgot_password
+
+from database import settings
+from database.depends import db_depends
+from src.email.logic import SendMail
+
 from .authentication import bcrypt
+from .exceptions import PasswordDifference, UserIDError
+from .models import User
+from .password import forgot_password
+from .schemes import ForgotPasswordScheme
 
 email_router = APIRouter(prefix="/email", tags=["email"])
 

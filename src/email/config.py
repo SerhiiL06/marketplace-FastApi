@@ -1,6 +1,7 @@
-from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
 
 load_dotenv()
 

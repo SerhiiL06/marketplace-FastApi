@@ -1,15 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-
-from .schemes import RegisterSuperUser, UserRead
-
-from .crud import UserCRUD
-from .models import User
-from .authentication import UserAuth, current_user
-from .common import check_role
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from database.depends import db_depends
-from .exceptions import UserIDError
 
+from .authentication import UserAuth, current_user
+from .common import check_role
+from .crud import UserCRUD
+from .exceptions import UserIDError
+from .models import User
+from .schemes import RegisterSuperUser, UserRead
 
 admin_router = APIRouter(prefix="/admin/users", tags=["admin users"])
 
