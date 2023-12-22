@@ -1,11 +1,12 @@
 from fastapi import HTTPException, status
+from database.depends import db_depends
 
 from .exceptions import AdvIDNotExists
 from .models import Advertisements, Car, House, Work
 
 
 class AdvertisementsCRUD:
-    def create_adv(self, data, user, db):
+    def create_adv(self, data, user, db=db_depends):
         obj = Advertisements(
             **data.model_dump(
                 exclude_none=True, exclude=["house_info", "car_info", "work_info"]
@@ -18,30 +19,25 @@ class AdvertisementsCRUD:
         db.refresh(obj)
 
         if obj.type == "house":
-            new_house = House(**data.house_info.model_dump(), advertisement=obj.id)
+            new = House(**data.house_info.model_dump(), advertisement=obj.id)
 
-            obj.house_info = new_house
-
-            db.add(new_house)
-
-            db.commit()
+            obj.house_info = new
 
         elif data.type == "car":
-            new_car = Car(**data.car_info.model_dump(), advertisement=obj.id)
-            obj.car_info = new_car
-            db.add(new_car)
-            db.commit()
+            new = Car(**data.car_info.model_dump(), advertisement=obj.id)
+            obj.car_info = new
 
         elif data.type == "work":
-            new_work = Work(**data.work_info.model_dump(), advertisement=obj.id)
+            new = Work(**data.work_info.model_dump(), advertisement=obj.id)
+            obj.car_info = new
 
-            obj.car_info = new_work
+        db.add(new)
 
-            db.add(new_work)
+        db.commit()
 
-            db.commit()
+        return new
 
-    def update_adv(self, db, adv_id, user, update_data):
+    def update_adv(self, adv_id, user, update_data, db=db_depends):
         current_obj = db.query(Advertisements).get(adv_id)
         if current_obj is None:
             raise AdvIDNotExists(adv_id)
@@ -74,7 +70,7 @@ class AdvertisementsCRUD:
 
     def list_adv(
         self,
-        db,
+        db=db_depends,
         **filter_data,
     ):
         object_list = db.query(Advertisements)
@@ -90,7 +86,7 @@ class AdvertisementsCRUD:
 
         return object_list.all()
 
-    def retrieve(self, db, adv_id):
+    def retrieve(self, adv_id, db=db_depends):
         obj = db.query(Advertisements).filter(Advertisements.id == adv_id).one_or_none()
         if obj is None:
             raise AdvIDNotExists(adv_id)
@@ -109,9 +105,9 @@ class AdvertisementsCRUD:
 
         db.commit()
 
-    def my_adv_list(self, db, user):
+    def my_adv_list(self, user, db=db_depends):
         object_list = db.query(Advertisements).filter(
             Advertisements.owner == user.get("user_id")
         )
 
-        return object_list
+        return object_list if object_list else []

@@ -1,154 +1,158 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status, Response, Request
+from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import asc, desc
+from sqlalchemy import desc
+from .password import PasswordFeature
 
-from database.depends import db_depends
 from src.advertisements.crud import AdvertisementsCRUD
-from src.advertisements.models import Advertisements
-from src.advertisements.schemes import DefaultAdvertisementScheme
 
-from .authentication import UserAuth, current_user
+
+from .authentication import UserAuth, current_user, decode_token
 from .crud import BookmarkActions, UserCRUD
-from .session import BookmarkSession
-from .models import Bookmark
 from .schemes import (
     ChangePassword,
     DefaultUserUpdate,
     RegisterUser,
-    Role,
     Token,
     UserRead,
+    AbstractUser,
+    ForgotPasswordScheme,
 )
 
-users_router = APIRouter(prefix="/users", tags=["users"])
 
-crud = UserCRUD()
+users_router = APIRouter(prefix="/users")
+
 adv_crud = AdvertisementsCRUD()
 
 bookmark = BookmarkActions()
 
 
-@users_router.post("/register")
-async def register(data: RegisterUser, db: db_depends):
-    await crud.create_user(data, db)
+# register/login endpoints
+@users_router.post(
+    "/register",
+    tags=["register/login"],
+    description="the login endpoint",
+    response_model=AbstractUser,
+    status_code=status.HTTP_201_CREATED,
+    response_description="user success created",
+)
+async def register(data: RegisterUser, crud: UserCRUD = Depends(UserCRUD)):
+    return await crud.create_user(data)
 
-    return {"message": "register success"}
 
-
-@users_router.post("/token", response_model=Token)
-async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_depends):
-    auth = UserAuth()
-
-    token = auth.login(data, db)
-
-    return {"access_token": token, "token_type": "bearer"}
+@users_router.post(
+    "/token",
+    tags=["register/login"],
+    description="In this endpoint create access token for user. Use this only for depends",
+    response_model=Token,
+    response_description="return JWT token",
+)
+async def token_login(
+    data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    auth: UserAuth = Depends(UserAuth),
+):
+    return auth.login(data)
 
 
 @users_router.post("/change-password")
 async def change_password(
     password_data: ChangePassword,
     user: current_user,
-    db: db_depends,
+    crud: UserCRUD = Depends(UserCRUD),
 ):
-    crud = UserCRUD()
+    crud.change_password(token_data=user, password=password_data)
 
-    crud.change_password(token_data=user, password=password_data, db=db)
-
-    return {"message": "password was edit"}
+    return Response(content="password update", status_code=status.HTTP_200_OK)
 
 
+# user profile endpoints
 @users_router.get(
     "/me",
+    tags=["user profile"],
+    summary="user can see her profile use this endpoint",
     response_model=UserRead,
     response_model_exclude=["id", "is_active", "role", "join_at"],
 )
-async def my_profile(user: current_user, db: db_depends):
-    data = crud.retrieve_user(user.get("user_id"), db)
-
+async def my_profile(
+    user: current_user,
+    crud: UserCRUD = Depends(UserCRUD),
+):
+    data = crud.retrieve_user(user.get("user_id"))
     return data
 
 
-@users_router.patch("/me")
+@users_router.patch(
+    "/me", tags=["user profile", "user CRUD"], description="user can update his profile"
+)
 async def update_user(
     data: DefaultUserUpdate,
     user: current_user,
-    db: db_depends,
+    crud: UserCRUD = Depends(UserCRUD),
 ):
-    correct_data = data.model_dump(exclude_unset=True)
-    crud.update_user(
+    currect_data = data.model_dump(exclude_unset=True)
+    update_user = crud.update_user(
         user_id=user.get("user_id"),
-        update_info=correct_data,
-        db=db,
+        update_info=currect_data,
     )
 
-    return {"message": "success update"}
+    return Response(content={"user": update_user}, status_code=status.HTTP_200_OK)
 
 
+# retrieve user
 @users_router.get(
     "/users-list/{user_id}",
+    tags=["users CRUD"],
     response_model=UserRead,
     response_model_exclude_none=True,
     response_model_exclude=["role", "is_active", "join_at"],
+    description="user profile view",
 )
-async def retrieve_user(user_id: int, current_user: current_user, db: db_depends):
-    user = crud.retrieve_user(user_id, db)
+async def retrieve_user(
+    user_id: int,
+    crud: UserCRUD = Depends(UserCRUD),
+):
+    user = crud.retrieve_user(user_id)
 
     return user
 
 
-@users_router.delete("/me")
-async def delete_me(user: current_user, db: db_depends):
-    user_id = user.get("user_id")
-    crud.delete_user(user_id, db)
-
-    return {"message": "delete success"}
-
-
-@users_router.delete("/user-list/{user_id}")
-async def delete_user(user_id: int, user: current_user, db: db_depends):
-    if user.get("role") not in [Role.ADMIN, Role.STAFF]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="you dont have permission"
-        )
-
-    crud.delete_user(user_id, db)
-
-    return {"message": "delete success"}
-
-
-@users_router.get("/bookmark/add/{adv_id}", tags=["bookmark"])
-async def add_to_bookmark(user: current_user, adv_id: int = Path(gt=0)):
-    return bookmark.add_delete_bookmark(user, adv_id)
-
-
-@users_router.get(
-    "/bookmakr/my", tags=["bookmark"], response_model=list[DefaultAdvertisementScheme]
+@users_router.delete(
+    "/me", tags=["users CRUD"], description="user can delete his account"
 )
-async def get_bookmarks(db: db_depends, user: current_user):
-    return (
-        db.query(Advertisements)
-        .join(Bookmark, Advertisements.id == Bookmark.adv_id)
-        .filter(Bookmark.user_id == user.get("user_id"))
-        .order_by(desc(Bookmark.created))
-        .all()
-    )
+async def delete_me(
+    user: current_user,
+    crud: UserCRUD = Depends(UserCRUD),
+):
+    crud.delete_user(user)
+
+    return Response(content="user was deleted", status_code=status.HTTP_200_OK)
 
 
-@users_router.post("/add-bookmark", tags=["session"])
-async def add_to_bookmark(adv_id: int, request: Request, response: Response):
-    session = BookmarkSession()
+@users_router.post("/update-password/{token}", tags=["forgot password"])
+async def update_password(
+    token: str,
+    password_data: ForgotPasswordScheme,
+    pwd: PasswordFeature = Depends(PasswordFeature),
+):
+    pwd.change_password(token, password_data)
 
-    return session.add_to_bookmark(adv_id, request, response)
+
+mail = SendMail()
 
 
-@users_router.get(
-    "/my-list-bookmark",
-    tags=["session"],
-    response_model=list[DefaultAdvertisementScheme],
-)
-async def bookmark_list(request: Request, db: db_depends):
-    session = BookmarkSession()
+@users_router.get("/confirm/{token}", tags=["forgot password"])
+async def link_for_verification(token: str):
+    mail.check_token_and_verify(token)
 
-    return session.get_bookmark_list(request, db)
+    return {"message": "Your email was confirm"}
+
+
+@users_router.post("/forgot-password/", tags=["forgot password"])
+async def forgot_password_send_email(email: EmailStr, db: db_depends):
+    chech_exists = db.query(User).filter(User.email == email).one_or_none()
+
+    if chech_exists is None:
+        raise UserIDError(email)
+
+    await forgot_password(email)

@@ -5,7 +5,7 @@ import json
 from src.advertisements.exceptions import AdvIDNotExists
 
 
-class BookmarkSession:
+class BookmarkCRUD:
     def add_to_bookmark(self, adv_id, request, response):
         db = db_depends()
         check_adv = (

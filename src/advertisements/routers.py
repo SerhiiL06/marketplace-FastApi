@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Query, Response, status, Depends
 
 from database.depends import db_depends
 from src.users.admin import check_role
@@ -9,23 +9,34 @@ from .schemes import AdvertisementsScheme, UpdateAdvScheme
 
 adv_router = APIRouter(prefix="/board", tags=["advertisements"])
 
-crud = AdvertisementsCRUD()
 
-
-@adv_router.post("/create")
-async def post_adv(data: AdvertisementsScheme, db: db_depends, user: current_user):
-    crud.create_adv(data, user, db)
-    return {"message": "well done"}
+@adv_router.post(
+    "/create",
+    response_model=AdvertisementsScheme,
+    summary="Authentication users can create adv",
+)
+async def post_adv(
+    data: AdvertisementsScheme,
+    user: current_user,
+    crud: AdvertisementsCRUD = Depends(AdvertisementsCRUD),
+):
+    return crud.create_adv(data, user)
 
 
 @adv_router.get(
-    "/list", response_model=list[AdvertisementsScheme], response_model_exclude_none=True
+    "/list",
+    response_model=list[AdvertisementsScheme],
+    response_model_exclude_none=True,
+    summary="catalog of adv",
+    description="Auth users and auth can see catalog of adv. And can filters.",
 )
 async def get_all_adv(
-    db: db_depends, category: list[str] = Query(None), title: str = Query(None)
+    category: list[str] = Query(None),
+    title: str = Query(None),
+    crud: AdvertisementsCRUD = Depends(AdvertisementsCRUD),
 ):
     filter_data = {"title": title, "category": category}
-    return crud.list_adv(db, **filter_data)
+    return crud.list_adv(**filter_data)
 
 
 @adv_router.get(
@@ -33,28 +44,26 @@ async def get_all_adv(
     response_model=list[AdvertisementsScheme],
     response_model_exclude_none=True,
 )
-async def my_adv(db: db_depends, user: current_user):
-    obj_list = crud.my_adv_list(db, user)
-
-    if obj_list:
-        return obj_list
-
-    return Response(
-        content={"now you don't have any advertisements"},
-        status_code=status.HTTP_204_NO_CONTENT,
-    )
+async def my_adv(
+    user: current_user, crud: AdvertisementsCRUD = Depends(AdvertisementsCRUD)
+):
+    return crud.my_adv_list(user)
 
 
 @adv_router.get(
     "/{adv_id}", response_model=AdvertisementsScheme, response_model_exclude_none=True
 )
-async def get_adv(db: db_depends, adv_id: int):
-    return crud.retrieve(db, adv_id)
+async def get_adv(adv_id: int, crud: AdvertisementsCRUD = Depends(AdvertisementsCRUD)):
+    return crud.retrieve(adv_id)
 
 
 @adv_router.put("/{adv_id}")
 async def update_adv(
-    adv_id: int, db: db_depends, user: current_user, update_info: UpdateAdvScheme
+    adv_id: int,
+    db: db_depends,
+    user: current_user,
+    update_info: UpdateAdvScheme,
+    crud: AdvertisementsCRUD = Depends(AdvertisementsCRUD),
 ):
     crud.update_adv(db, adv_id, user, update_info)
 
@@ -63,7 +72,11 @@ async def update_adv(
 
 @adv_router.delete("/{adv_id}")
 @check_role(["default", "admin", "staff"])
-async def delete_adv(db: db_depends, avd_id: int, user: current_user):
-    crud.delete(db, avd_id, user)
+async def delete_adv(
+    avd_id: int,
+    user: current_user,
+    crud: AdvertisementsCRUD = Depends(AdvertisementsCRUD),
+):
+    crud.delete(avd_id, user)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

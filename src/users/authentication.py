@@ -44,7 +44,9 @@ class UserAuth:
                 detail="you need to verify or profile",
             )
 
-        return self._create_access_token(user.role, user.id, user.email)
+        token = self._create_access_token(user.role, user.id, user.email)
+
+        return {"access_token": token, "token_type": "bearer"}
 
     def _create_superuser(self, data: dict, db):
         crud = UserCRUD()
@@ -64,10 +66,7 @@ class UserAuth:
         return token
 
 
-def authenticate(token: Annotated[str, Depends(bearer_token)]):
-    if token is None:
-        raise JWTError()
-
+def decode_token(token):
     user = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
     exp = datetime.fromtimestamp(user.get("exp"))
@@ -75,6 +74,13 @@ def authenticate(token: Annotated[str, Depends(bearer_token)]):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     return user
+
+
+def authenticate(token: Annotated[str, Depends(bearer_token)]):
+    if token is None:
+        raise JWTError()
+
+    return decode_token(token)
 
 
 current_user = Annotated[dict, Depends(authenticate)]

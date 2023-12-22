@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from database import settings
 from database.depends import db_depends
 from src.email.logic import SendMail
+from typing import Annotated
 
 from .exceptions import PasswordDifference, UserAlreadyExists, UserIDError
 from .models import Bookmark, Role, User
@@ -19,7 +20,7 @@ mail = SendMail()
 
 
 class UserCRUD:
-    async def create_user(self, user_data, db, admin=None):
+    async def create_user(self, user_data, db=db_depends(), admin=None):
         if db.query(User).filter(User.email == user_data.email).first():
             raise UserAlreadyExists(email=user_data.email)
 
@@ -38,43 +39,16 @@ class UserCRUD:
         db.add(new_user)
         db.commit()
 
-        await mail.send_email(user_data.email)
+        await mail.send_email(new_user.email)
 
-    def change_password(self, token_data, password, db):
-        current_user = (
-            db.query(User).filter(User.id == token_data.get("user_id")).one_or_none()
-        )
+        return new_user
 
-        if current_user is None:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="something went wrong"
-            )
-
-        # check user password
-        verify_password = bcrypt.verify(
-            password.old_password, current_user.hashed_password
-        )
-
-        if verify_password is False:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="check you old password"
-            )
-
-        if password.new_password1 != password.new_password2:
-            raise PasswordDifference()
-
-        new_hash_password = bcrypt.hash(password.new_password1)
-
-        current_user.hashed_password = new_hash_password
-
-        db.commit()
-
-    def user_list(self, db):
+    def read_users(self, db=db_depends()):
         users = db.query(User)
 
         return users
 
-    def retrieve_user(self, user_id, db):
+    def retrieve_user(self, user_id, db=db_depends()):
         user = db.query(User).filter(User.id == user_id).one_or_none()
 
         if user is None:
@@ -82,7 +56,7 @@ class UserCRUD:
 
         return user
 
-    def update_user(self, user_id, update_info, db):
+    def update_user(self, user_id, update_info, db=db_depends()):
         user = db.query(User).filter(User.id == user_id).one_or_none()
 
         for field, value in update_info.items():
@@ -90,7 +64,8 @@ class UserCRUD:
 
         db.commit()
 
-    def delete_user(self, user_id, db):
+    def delete_user(self, user, db=db_depends()):
+        user_id = user.get("user_id")
         user = db.query(User).filter(User.id == user_id).one_or_none()
 
         if user is None:
@@ -102,23 +77,21 @@ class UserCRUD:
 
 
 class BookmarkActions:
-    db = db_depends()
-
-    def add_delete_bookmark(self, user, adv_id):
+    def add_delete_bookmark(self, user, adv_id, db=db_depends()):
         check_exists = (
-            self.db.query(Bookmark)
+            db.query(Bookmark)
             .filter(Bookmark.user_id == user.get("user_id"), Bookmark.adv_id == adv_id)
             .one_or_none()
         )
 
         if check_exists:
-            self.db.delete(check_exists)
-            self.db.commit()
+            db.delete(check_exists)
+            db.commit()
             return Response(content="delete", status_code=status.HTTP_204_NO_CONTENT)
 
         obj = Bookmark(user_id=user.get("user_id"), adv_id=adv_id)
 
-        self.db.add(obj)
-        self.db.commit()
+        db.add(obj)
+        db.commit()
 
         return Response(content="create", status_code=status.HTTP_200_OK)

@@ -27,6 +27,7 @@ class AbstractUser(BaseModel):
 
 
 class RegisterUser(AbstractUser):
+    model_config = ConfigDict(from_attributes=True)
     first_name: str = Field(min_length=5, max_length=15)
     last_name: str = Field(min_length=5, max_length=15)
     password1: str = Field(min_length=6, description="password")

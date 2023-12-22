@@ -1,9 +1,0 @@
-type: object
-      required:
-        - title
-        - price
-      properties: 
-        title:
-          type: string
-        price: 
-          type: number

@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import (Boolean, DateTime, ForeignKey, Integer, LargeBinary,
-                        MetaData, String)
+from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.settings import Base
