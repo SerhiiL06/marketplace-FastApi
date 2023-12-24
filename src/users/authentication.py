@@ -20,7 +20,8 @@ bearer_token = OAuth2PasswordBearer(tokenUrl="users/token")
 
 
 class UserAuth:
-    def login(self, data, db):
+    def login(self, data, db: db_depends):
+        db = db_depends()
         user = db.query(User).filter(User.email == data.username).first()
 
         # check email address

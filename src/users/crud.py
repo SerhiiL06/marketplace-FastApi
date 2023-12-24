@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+from fastapi.background import BackgroundTasks
 
 from database import settings
 from database.depends import db_depends
@@ -39,7 +40,9 @@ class UserCRUD:
         db.add(new_user)
         db.commit()
 
-        await mail.send_email(new_user.email)
+        task = BackgroundTasks()
+
+        task.add_task(mail.send_email, new_user)
 
         return new_user
 
@@ -49,7 +52,9 @@ class UserCRUD:
         return users
 
     def retrieve_user(self, user_id, db=db_depends()):
-        user = db.query(User).filter(User.id == user_id).one_or_none()
+        user = (
+            db.query(User).join(User.bookmarks).filter(User.id == user_id).one_or_none()
+        )
 
         if user is None:
             raise UserIDError(id=user_id)

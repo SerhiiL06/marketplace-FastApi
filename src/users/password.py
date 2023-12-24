@@ -6,7 +6,7 @@ from src.email.config import mail_config
 from src.email.logic import SendMail
 from .exceptions import PasswordDifference
 from passlib.context import CryptContext
-from authentication import decode_token
+from .authentication import decode_token
 
 create_token = SendMail()
 
@@ -30,8 +30,8 @@ class HashPassword:
 
 
 class PasswordFeature:
-    def __init__(self, bctype: HashPassword) -> None:
-        self.bctype = bcrypt
+    # def __init__(self, bctype: HashPassword) -> None:
+    #     self.bctype = bcrypt
 
     # check_password = HashPassword()
 

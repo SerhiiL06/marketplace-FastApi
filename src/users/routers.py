@@ -2,13 +2,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import desc
-from .password import PasswordFeature
+from src.email.logic import SendMail
+from .models import User
+from fastapi_cache.decorator import cache
+from .exceptions import UserIDError
+from pydantic import EmailStr
+from .password import PasswordFeature, forgot_password
+from database.depends import db_depends
 
 from src.advertisements.crud import AdvertisementsCRUD
 
 
-from .authentication import UserAuth, current_user, decode_token
+from src.users.authentication import UserAuth, current_user
 from .crud import BookmarkActions, UserCRUD
 from .schemes import (
     ChangePassword,
@@ -67,13 +72,16 @@ async def change_password(
 
 
 # user profile endpoints
+
+
 @users_router.get(
     "/me",
-    tags=["user profile"],
+    tags=["profile"],
     summary="user can see her profile use this endpoint",
     response_model=UserRead,
     response_model_exclude=["id", "is_active", "role", "join_at"],
 )
+@cache(expire=60)
 async def my_profile(
     user: current_user,
     crud: UserCRUD = Depends(UserCRUD),
@@ -83,7 +91,7 @@ async def my_profile(
 
 
 @users_router.patch(
-    "/me", tags=["user profile", "user CRUD"], description="user can update his profile"
+    "/me", tags=["profile", "profile"], description="user can update his profile"
 )
 async def update_user(
     data: DefaultUserUpdate,
@@ -97,6 +105,16 @@ async def update_user(
     )
 
     return Response(content={"user": update_user}, status_code=status.HTTP_200_OK)
+
+
+@users_router.delete("/me", tags=["profile"], description="user can delete his account")
+async def delete_me(
+    user: current_user,
+    crud: UserCRUD = Depends(UserCRUD),
+):
+    crud.delete_user(user)
+
+    return Response(content="user was deleted", status_code=status.HTTP_200_OK)
 
 
 # retrieve user
@@ -117,18 +135,6 @@ async def retrieve_user(
     return user
 
 
-@users_router.delete(
-    "/me", tags=["users CRUD"], description="user can delete his account"
-)
-async def delete_me(
-    user: current_user,
-    crud: UserCRUD = Depends(UserCRUD),
-):
-    crud.delete_user(user)
-
-    return Response(content="user was deleted", status_code=status.HTTP_200_OK)
-
-
 @users_router.post("/update-password/{token}", tags=["forgot password"])
 async def update_password(
     token: str,
@@ -136,6 +142,7 @@ async def update_password(
     pwd: PasswordFeature = Depends(PasswordFeature),
 ):
     pwd.change_password(token, password_data)
+    pass
 
 
 mail = SendMail()

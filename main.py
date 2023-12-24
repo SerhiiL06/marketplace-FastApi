@@ -5,9 +5,17 @@ from fastapi.responses import JSONResponse
 from src.advertisements.exceptions import AdvIDNotExists
 from src.advertisements.routers import adv_router
 from src.users.admin import admin_router
-from src.users.email_confirm import email_router
+
+# from src.users.email_confirm import email_router
 from src.users.exceptions import PasswordDifference, UserAlreadyExists, UserIDError
 from src.users.routers import users_router
+
+
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
+
+from redis import asyncio as aioredis
 
 
 app = FastAPI(
@@ -26,7 +34,24 @@ app.include_router(users_router)
 app.include_router(admin_router)
 
 app.include_router(adv_router)
-app.include_router(email_router)
+# app.include_router(email_router)
+
+
+@cache()
+async def get_cache():
+    return 1
+
+
+@app.get("/")
+@cache(expire=60)
+async def index():
+    return dict(hello="world")
+
+
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.from_url("redis://localhost")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
 
 
 # register exceptions

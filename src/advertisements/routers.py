@@ -3,7 +3,7 @@ from fastapi import APIRouter, Query, Response, status, Depends
 from database.depends import db_depends
 from src.users.admin import check_role
 from src.users.authentication import current_user
-
+from fastapi_cache.decorator import cache
 from .crud import AdvertisementsCRUD
 from .schemes import AdvertisementsScheme, UpdateAdvScheme
 
@@ -30,6 +30,7 @@ async def post_adv(
     summary="catalog of adv",
     description="Auth users and auth can see catalog of adv. And can filters.",
 )
+@cache(expire=60)
 async def get_all_adv(
     category: list[str] = Query(None),
     title: str = Query(None),

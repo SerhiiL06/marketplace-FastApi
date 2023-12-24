@@ -73,7 +73,12 @@ class AdvertisementsCRUD:
         db=db_depends,
         **filter_data,
     ):
-        object_list = db.query(Advertisements)
+        db = db_depends()
+        object_list = db.query(Advertisements).join(
+            [
+                Advertisements.car_info,
+            ]
+        )
         if filter_data.get("category", None) is not None:
             object_list = object_list.filter(
                 (Advertisements.type).in_(filter_data.get("category"))
